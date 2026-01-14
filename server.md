@@ -14,5 +14,7 @@ For a database, we'll use Firestore in Datastore mode. I really don't
 like the whole idea of a collection, I'd like to use proper models.
 
 With Twilio, we will use their Verify API instead of sending SMS for
-verification directly.
+verification directly. We need to catch errors returned from the
+Twilio API due to invalid phone numbers, incorrect codes, or any other
+errors that Twilio might throw.
 

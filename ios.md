@@ -1,0 +1,69 @@
+# iOS SMSAuthApp
+
+Using the API from @server/API.md we're going to create an iOS app
+that demonstrates authentication using SMS.
+
+There will be three main views:
+
+ - EnterPhoneNumberView: where the users enters their phone number when authenticating
+ 
+ - VerifyCodeView: Where the user enters the verification code that we send via SMS
+ 
+ - HomeView: The view that we show for authenticated users
+
+## Model + ViewModel
+
+Our core model and viewmodel will be a UserService observable
+object. This object is where we'll keep track of the current state of
+the user.
+
+Properties include:
+
+  - isAuthenticated: true if there is an authenticated users currently
+
+  - userId: the userId of the authenticated user
+
+  - authError: a error from the server that might happen during authentication
+
+Functions include:
+
+  - sendVerificationCode
+
+  - verifyCode
+
+  - clearAuthError
+
+To track authenticated users, this object will use UserPreferences to
+store the `token` they get from the server, and you can check if the
+token is valid using an API call.
+
+## EnterPhoneNumberView
+
+This View will have:
+
+  - Text: What's your phone number?
+  - Text: We'll text you a code to verify your phone
+  - PhoneEntry: Flag selector (US, MX, CA, India, and China only) | country code for the phone | the view where the user enters their phone number
+  - Error text: Only shows when there is an authError
+  - A button to advnace
+
+From a UX pespective, I have PhoneNumberKit loaded, so use it to
+format the phone number as they type, ensure that it's valid client
+side, and format it as an E.164 number before sending it to the
+server.
+
+Clear the error once the user edits the phone
+
+When they press the "next" button, show a loading animation
+
+# VerifyCodeView
+
+This view will have
+
+  - Text: Enter the code to verify your phone
+  - Edit: Where the user enters the digits
+  - Error text: Only shows when there is an authError
+
+This view should automatically advance once the user enters the code
+
+Clear the error once the user edits the code
