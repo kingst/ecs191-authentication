@@ -18,3 +18,24 @@ verification directly. We need to catch errors returned from the
 Twilio API due to invalid phone numbers, incorrect codes, or any other
 errors that Twilio might throw.
 
+## Testing phone numbers
+
+To help people test, the server recognizes several phone numbers that
+bypass Twilio and return predictable responses. This is similar to
+Stripe's test credit card numbers.
+
+All test numbers use the format: `+1530555XXXX`
+
+| Phone Number | Scenario | Behavior |
+|--------------|----------|----------|
+| +15305550000 | Happy path | Sends successfully; use code `123456` to verify |
+| +15305550001 | Invalid phone number | Returns 400: `Failed to send verification: Invalid phone number` |
+| +15305550002 | Invalid code | Sends successfully; any code returns 401: `Invalid or expired code` |
+| +15305550003 | Max attempts reached | Sends successfully; code check returns 401: `Invalid or expired code` (simulates too many failed attempts) |
+| +15305550004 | Service unavailable | Returns 400: `Failed to send verification: Service temporarily unavailable` |
+
+### Notes
+
+- Validation errors (missing fields, invalid E.164 format) can be tested with any phone number
+- Token-based errors (`Authorization header required`, `Invalid token`, `User not found`) are tested by manipulating the Authorization header, not by phone number
+- The happy path code `123456` only works with the test number `+15305550000`
