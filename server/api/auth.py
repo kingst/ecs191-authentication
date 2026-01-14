@@ -7,7 +7,7 @@ from services.firestore_service import (
     get_session,
     get_user_by_key,
 )
-from services.twilio_service import send_verification, check_verification
+from services.twilio_service import send_verification, check_verification, TwilioError
 
 
 auth_api = Blueprint("auth_api", __name__)
@@ -36,7 +36,10 @@ def send_sms_code():
     if not validate_phone_number(phone_number):
         return jsonify({"error": "Invalid phone number format. Use E.164 format (e.g., +14155551234)"}), 400
 
-    send_verification(phone_number)
+    try:
+        send_verification(phone_number)
+    except TwilioError as e:
+        return jsonify({"error": str(e)}), 400
 
     return jsonify({"success": True})
 
@@ -53,8 +56,11 @@ def verify_code_endpoint():
     app_id = data["app_id"]
     code = data["code"]
 
-    if not check_verification(phone_number, code):
-        return jsonify({"error": "Invalid or expired code"}), 401
+    try:
+        if not check_verification(phone_number, code):
+            return jsonify({"error": "Invalid or expired code"}), 401
+    except TwilioError as e:
+        return jsonify({"error": str(e)}), 400
 
     user = get_or_create_user(phone_number, app_id)
     token = create_session(user)

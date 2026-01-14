@@ -1,6 +1,6 @@
 # SMS Login API Documentation
 
-Base URL: `https://your-app.appspot.com` (production) or `http://localhost:5001` (local)
+Base URL: `https://ecs191-sms-authentication.uc.r.appspot.com` (production) or `http://localhost:5001` (local)
 
 ## Authentication
 
