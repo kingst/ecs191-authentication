@@ -40,3 +40,10 @@ After you deploy the deploy script will display the URL for your
 production service. For our service it is:
 
   - https://ecs191-sms-authentication.uc.r.appspot.com
+
+To run unit tests:
+
+```bash
+source venv/bin/activate
+pytest
+```
