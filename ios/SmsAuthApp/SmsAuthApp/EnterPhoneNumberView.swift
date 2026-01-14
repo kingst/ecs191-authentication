@@ -14,6 +14,7 @@ struct EnterPhoneNumberView: View {
 
     @State private var phoneNumber = ""
     @State private var selectedRegion = "US"
+    @State private var partialFormatter = PartialFormatter(defaultRegion: "US")
 
     private let phoneNumberUtility = PhoneNumberUtility()
     private let supportedRegions = ["US", "MX", "CA", "IN", "CN"]
@@ -74,6 +75,8 @@ struct EnterPhoneNumberView: View {
                     ForEach(supportedRegions, id: \.self) { region in
                         Button {
                             selectedRegion = region
+                            partialFormatter = PartialFormatter(defaultRegion: region)
+                            phoneNumber = partialFormatter.formatPartial(phoneNumber)
                             userService.clearAuthError()
                         } label: {
                             let code = phoneNumberUtility.countryCode(for: region) ?? 0
@@ -103,8 +106,12 @@ struct EnterPhoneNumberView: View {
                     .padding(.vertical, 14)
                     .background(Color(.systemGray6))
                     .cornerRadius(10)
-                    .onChange(of: phoneNumber) { _, _ in
+                    .onChange(of: phoneNumber) { oldValue, newValue in
                         userService.clearAuthError()
+                        let formatted = partialFormatter.formatPartial(newValue)
+                        if formatted != newValue {
+                            phoneNumber = formatted
+                        }
                     }
             }
             .padding(.horizontal)

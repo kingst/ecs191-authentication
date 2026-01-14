@@ -12,6 +12,16 @@ class UserService: ObservableObject {
     private static let baseURL = "https://ecs191-sms-authentication.uc.r.appspot.com"
     private static let appId = "com.smsauthapp.ios"
 
+    // Use ephemeral session on simulator to avoid QUIC protocol issues with App Engine
+    private static let urlSession: URLSession = {
+        #if targetEnvironment(simulator)
+        let config = URLSessionConfiguration.ephemeral
+        return URLSession(configuration: config)
+        #else
+        return URLSession.shared
+        #endif
+    }()
+
     @Published var isAuthenticated = false
     @Published var userId: String?
     @Published var authError: String?
@@ -58,7 +68,7 @@ class UserService: ObservableObject {
 
         do {
             request.httpBody = try JSONEncoder().encode(body)
-            let (data, response) = try await URLSession.shared.data(for: request)
+            let (data, response) = try await Self.urlSession.data(for: request)
 
             guard let httpResponse = response as? HTTPURLResponse else {
                 authError = "Invalid response"
@@ -100,7 +110,7 @@ class UserService: ObservableObject {
 
         do {
             request.httpBody = try JSONEncoder().encode(body)
-            let (data, response) = try await URLSession.shared.data(for: request)
+            let (data, response) = try await Self.urlSession.data(for: request)
 
             guard let httpResponse = response as? HTTPURLResponse else {
                 authError = "Invalid response"
@@ -146,7 +156,7 @@ class UserService: ObservableObject {
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
 
         do {
-            let (data, response) = try await URLSession.shared.data(for: request)
+            let (data, response) = try await Self.urlSession.data(for: request)
 
             guard let httpResponse = response as? HTTPURLResponse else {
                 isAuthenticated = false

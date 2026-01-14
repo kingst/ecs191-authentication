@@ -65,7 +65,7 @@ def verify_code_endpoint():
     user = get_or_create_user(phone_number, app_id)
     token = create_session(user)
 
-    return jsonify({"success": True, "token": token, "user_id": user.key.id()})
+    return jsonify({"success": True, "token": token, "user_id": str(user.key.id())})
 
 
 @auth_api.route("/v1/user", methods=["GET"])
@@ -88,6 +88,6 @@ def get_user():
         return jsonify({"error": "User not found"}), 404
 
     return jsonify({
-        "user_id": user.key.id(),
+        "user_id": str(user.key.id()),
         "created_at": user.created_at.isoformat() if user.created_at else None,
     })
