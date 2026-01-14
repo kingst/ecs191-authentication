@@ -1,0 +1,4 @@
+runtime: python313
+service: default
+
+instance_class: F1
