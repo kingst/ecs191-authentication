@@ -5,13 +5,17 @@ that demonstrates authentication using SMS.
 
 There will be three main views:
 
- - EnterPhoneNumberView: where the users enters their phone number when authenticating
+  - EnterPhoneNumberView: where the users enters their phone number when authenticating
  
- - VerifyCodeView: Where the user enters the verification code that we send via SMS
+  - VerifyCodeView: Where the user enters the verification code that we send via SMS
  
- - HomeView: The view that we show for authenticated users
+  - HomeView: The view that we show for authenticated users
 
- - MainView: The base view that cooridnates everything
+  - MainView: The base view that cooridnates everything
+
+We will use the `PhoneNumberKit` Swift Package, which is at:
+
+  - https://github.com/marmelroy/PhoneNumberKit
 
 ## APIs
 
@@ -47,7 +51,9 @@ Properties include:
 
   - isAuthenticated: true if there is an authenticated users currently
 
-  - isCheckingAuth: true if there is an active network request to check the validity of an auth token
+  - userState (enum): init, enterPhoneNumber, verifyCode,
+    loggedIn. This state will control which view is shown from
+    MainView
 
   - userId: the userId of the authenticated user
 
@@ -67,6 +73,22 @@ To track authenticated users, this object will use UserDefaults to
 store the `token` they get from the server, and you can check if the
 token is valid using an API call. You can logout by deleting the
 token from memory and disk.
+
+## MainView
+
+The MainView is where all of the core onboarding views are hosted,
+it's the first view in the app and where we select between different
+core views. The `userState` dictates which subview is shown here.
+
+Services that all views will need and should be included in the
+Environment:
+
+  - UserService
+
+## HomeView
+
+A placeholder for where the authenticated experience for the app
+begins
 
 ## EnterPhoneNumberView
 
@@ -91,9 +113,9 @@ When they press the "next" button, show a loading animation
 
 This view will have
 
-  - Text: Enter the code to verify your phone
-  - Text: The user's formatted phone number
-  - Edit: Where the user enters the digits
+  - Text: What's the code?
+  - Text: Enter the code we sent to {formattedPhoneNumber}
+  - Edit: Where the user enters 6 digits
   - Error text: Only shows when there is an authError
 
 This view should automatically advance once the user enters the code
