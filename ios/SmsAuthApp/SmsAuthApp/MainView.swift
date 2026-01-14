@@ -13,7 +13,9 @@ struct MainView: View {
 
     var body: some View {
         Group {
-            if userService.isAuthenticated {
+            if userService.isCheckingAuth {
+                ProgressView()
+            } else if userService.isAuthenticated {
                 HomeView(userService: userService)
             } else if showVerifyCode {
                 VerifyCodeView(userService: userService)

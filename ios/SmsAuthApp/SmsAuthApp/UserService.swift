@@ -16,6 +16,12 @@ class UserService: ObservableObject {
     private static let urlSession: URLSession = {
         #if targetEnvironment(simulator)
         let config = URLSessionConfiguration.ephemeral
+        
+        // FORCE HTTP/1.1
+        // This prevents HTTP/2 and HTTP/3 upgrades entirely.
+        // It is slower, but rock-solid stable for the Simulator.
+        config.httpMaximumConnectionsPerHost = 1
+        
         return URLSession(configuration: config)
         #else
         return URLSession.shared
@@ -23,6 +29,7 @@ class UserService: ObservableObject {
     }()
 
     @Published var isAuthenticated = false
+    @Published var isCheckingAuth = true
     @Published var userId: String?
     @Published var authError: String?
     @Published var isLoading = false
@@ -142,6 +149,8 @@ class UserService: ObservableObject {
     }
 
     private func checkAuthentication() async {
+        defer { isCheckingAuth = false }
+
         guard let token = token else {
             isAuthenticated = false
             return
