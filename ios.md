@@ -11,6 +11,32 @@ There will be three main views:
  
  - HomeView: The view that we show for authenticated users
 
+ - MainView: The base view that cooridnates everything
+
+## APIs
+
+There are issues with HTTP/3 and the iOS simulator so when we make
+network connections in the app we need to disable HTTP/3 for the
+simulator. We should use code that looks something like this:
+
+```swift
+    // Use ephemeral session on simulator to avoid QUIC protocol issues with App Engine
+    private static let urlSession: URLSession = {
+        #if targetEnvironment(simulator)
+        let config = URLSessionConfiguration.ephemeral
+        
+        // FORCE HTTP/1.1
+        // This prevents HTTP/2 and HTTP/3 upgrades entirely.
+        // It is slower, but rock-solid stable for the Simulator.
+        config.httpMaximumConnectionsPerHost = 1
+        
+        return URLSession(configuration: config)
+        #else
+        return URLSession.shared
+        #endif
+    }()
+```
+
 ## Model + ViewModel
 
 Our core model and viewmodel will be a UserService observable
@@ -20,6 +46,8 @@ the user.
 Properties include:
 
   - isAuthenticated: true if there is an authenticated users currently
+
+  - isCheckingAuth: true if there is an active network request to check the validity of an auth token
 
   - userId: the userId of the authenticated user
 
@@ -31,11 +59,14 @@ Functions include:
 
   - verifyCode
 
+  - logout
+
   - clearAuthError
 
-To track authenticated users, this object will use UserPreferences to
+To track authenticated users, this object will use UserDefaults to
 store the `token` they get from the server, and you can check if the
-token is valid using an API call.
+token is valid using an API call. You can logout by deleting the
+token from memory and disk.
 
 ## EnterPhoneNumberView
 
@@ -61,9 +92,10 @@ When they press the "next" button, show a loading animation
 This view will have
 
   - Text: Enter the code to verify your phone
+  - Text: The user's formatted phone number
   - Edit: Where the user enters the digits
   - Error text: Only shows when there is an authError
 
 This view should automatically advance once the user enters the code
 
-Clear the error once the user edits the code
+Clear the error once the user edits the code or they press the `back` button
