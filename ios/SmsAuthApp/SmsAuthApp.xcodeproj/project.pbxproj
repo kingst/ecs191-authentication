@@ -7,9 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		3B9832DB2F17486000F91D12 /* PhoneNumberKit in Frameworks */ = {isa = PBXBuildFile; productRef = 3B9832DA2F17486000F91D12 /* PhoneNumberKit */; };
-		3B9832DD2F17486000F91D12 /* PhoneNumberKit-Dynamic in Frameworks */ = {isa = PBXBuildFile; productRef = 3B9832DC2F17486000F91D12 /* PhoneNumberKit-Dynamic */; };
-		3B9832DF2F17486000F91D12 /* PhoneNumberKit-Static in Frameworks */ = {isa = PBXBuildFile; productRef = 3B9832DE2F17486000F91D12 /* PhoneNumberKit-Static */; };
+		3B90A41D2F174BE1000A7B5C /* PhoneNumberKit in Frameworks */ = {isa = PBXBuildFile; productRef = 3B90A41C2F174BE1000A7B5C /* PhoneNumberKit */; };
+		3B90A41F2F174BE1000A7B5C /* PhoneNumberKit-Static in Frameworks */ = {isa = PBXBuildFile; productRef = 3B90A41E2F174BE1000A7B5C /* PhoneNumberKit-Static */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -29,19 +28,26 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				3B9832DB2F17486000F91D12 /* PhoneNumberKit in Frameworks */,
-				3B9832DD2F17486000F91D12 /* PhoneNumberKit-Dynamic in Frameworks */,
-				3B9832DF2F17486000F91D12 /* PhoneNumberKit-Static in Frameworks */,
+				3B90A41D2F174BE1000A7B5C /* PhoneNumberKit in Frameworks */,
+				3B90A41F2F174BE1000A7B5C /* PhoneNumberKit-Static in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		3B90A4162F174B79000A7B5C /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		3B9832BB2F1747F500F91D12 = {
 			isa = PBXGroup;
 			children = (
 				3B9832C62F1747F500F91D12 /* SmsAuthApp */,
+				3B90A4162F174B79000A7B5C /* Frameworks */,
 				3B9832C52F1747F500F91D12 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -74,9 +80,8 @@
 			);
 			name = SmsAuthApp;
 			packageProductDependencies = (
-				3B9832DA2F17486000F91D12 /* PhoneNumberKit */,
-				3B9832DC2F17486000F91D12 /* PhoneNumberKit-Dynamic */,
-				3B9832DE2F17486000F91D12 /* PhoneNumberKit-Static */,
+				3B90A41C2F174BE1000A7B5C /* PhoneNumberKit */,
+				3B90A41E2F174BE1000A7B5C /* PhoneNumberKit-Static */,
 			);
 			productName = SmsAuthApp;
 			productReference = 3B9832C42F1747F500F91D12 /* SmsAuthApp.app */;
@@ -107,7 +112,7 @@
 			mainGroup = 3B9832BB2F1747F500F91D12;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				3B9832D92F17486000F91D12 /* XCRemoteSwiftPackageReference "PhoneNumberKit" */,
+				3B90A41B2F174BE1000A7B5C /* XCRemoteSwiftPackageReference "PhoneNumberKit" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 3B9832C52F1747F500F91D12 /* Products */;
@@ -341,7 +346,7 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
-		3B9832D92F17486000F91D12 /* XCRemoteSwiftPackageReference "PhoneNumberKit" */ = {
+		3B90A41B2F174BE1000A7B5C /* XCRemoteSwiftPackageReference "PhoneNumberKit" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/marmelroy/PhoneNumberKit";
 			requirement = {
@@ -352,19 +357,14 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		3B9832DA2F17486000F91D12 /* PhoneNumberKit */ = {
+		3B90A41C2F174BE1000A7B5C /* PhoneNumberKit */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 3B9832D92F17486000F91D12 /* XCRemoteSwiftPackageReference "PhoneNumberKit" */;
+			package = 3B90A41B2F174BE1000A7B5C /* XCRemoteSwiftPackageReference "PhoneNumberKit" */;
 			productName = PhoneNumberKit;
 		};
-		3B9832DC2F17486000F91D12 /* PhoneNumberKit-Dynamic */ = {
+		3B90A41E2F174BE1000A7B5C /* PhoneNumberKit-Static */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 3B9832D92F17486000F91D12 /* XCRemoteSwiftPackageReference "PhoneNumberKit" */;
-			productName = "PhoneNumberKit-Dynamic";
-		};
-		3B9832DE2F17486000F91D12 /* PhoneNumberKit-Static */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 3B9832D92F17486000F91D12 /* XCRemoteSwiftPackageReference "PhoneNumberKit" */;
+			package = 3B90A41B2F174BE1000A7B5C /* XCRemoteSwiftPackageReference "PhoneNumberKit" */;
 			productName = "PhoneNumberKit-Static";
 		};
 /* End XCSwiftPackageProductDependency section */
