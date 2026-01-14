@@ -18,5 +18,10 @@ if ! test -f google-auth.json; then
     exit
 fi
 
+if ! test -f creds.py; then
+    echo 'Missing creds.py'
+    exit
+fi
+
 gcloud config set account kingst@ucdavis.edu
 gcloud app deploy --project=ecs191-sms-authentication --promote
