@@ -5,12 +5,14 @@ import os
 import sys
 
 from api.auth import auth_api
+from api.food import food_api
 
 
 app = Flask(__name__)
 os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = 'google-auth.json'
 
 app.register_blueprint(auth_api)
+app.register_blueprint(food_api)
 
 
 if __name__ == '__main__':

@@ -7,6 +7,19 @@ using the server. The iOS and Android clients will be standard apps vs
 an SDK and will be for demonstration purposes, but we will deploy the
 server to production so that students can use it this quarter.
 
+## Project organization
+
+From the top level directory of this repo, here are the main
+subdirectories:
+
+  - prompts: where we store prompts we use
+
+  - server: The Google App Engine Python service for hosting our APIs
+
+  - ios: The iOS app
+
+  - android: The Android app
+
 ## Rules
 
 - Don't commit any code using `git`. I'd like to inspect code you

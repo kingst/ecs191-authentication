@@ -210,3 +210,76 @@ class TestGetUser:
         assert response.status_code == 200
         assert "user_id" in response.json
         assert "created_at" in response.json
+
+
+@pytest.fixture
+def mock_food_services():
+    """Mock services for food API endpoints."""
+    with patch("api.food.get_session") as mock_get_session, \
+         patch("api.food.get_user_by_key") as mock_get_user_by_key, \
+         patch("api.food.generate_upload_url") as mock_generate_upload_url:
+
+        mock_user = MagicMock()
+        mock_user.key.id.return_value = "user_test123"
+
+        mock_session = MagicMock()
+        mock_session.user_key = mock_user.key
+        mock_get_session.return_value = mock_session
+
+        mock_get_user_by_key.return_value = mock_user
+
+        mock_generate_upload_url.return_value = (
+            "https://storage.googleapis.com/ecs191-login-bucket/signed-url",
+            "a1b2c3d4-e5f6-7890-abcd-ef1234567890.jpg"
+        )
+
+        yield {
+            "get_session": mock_get_session,
+            "get_user_by_key": mock_get_user_by_key,
+            "generate_upload_url": mock_generate_upload_url,
+            "user": mock_user,
+        }
+
+
+class TestGetUploadUrl:
+    """Tests for GET /v1/food/upload_url endpoint."""
+
+    def test_missing_auth_header(self, client):
+        """Should return 401 when Authorization header is missing."""
+        response = client.get("/v1/food/upload_url")
+        assert response.status_code == 401
+        assert "Authorization header required" in response.json["error"]
+
+    def test_malformed_auth_header(self, client):
+        """Should return 401 for malformed Authorization header."""
+        response = client.get("/v1/food/upload_url", headers={"Authorization": "InvalidFormat"})
+        assert response.status_code == 401
+        assert "Authorization header required" in response.json["error"]
+
+    def test_invalid_token(self, client, mock_food_services):
+        """Should return 401 for invalid token."""
+        mock_food_services["get_session"].return_value = None
+        response = client.get("/v1/food/upload_url", headers={"Authorization": "Bearer invalid_token"})
+        assert response.status_code == 401
+        assert "Invalid token" in response.json["error"]
+
+    def test_user_not_found(self, client, mock_food_services):
+        """Should return 404 when user record is deleted."""
+        mock_food_services["get_user_by_key"].return_value = None
+        response = client.get("/v1/food/upload_url", headers={"Authorization": "Bearer valid_token"})
+        assert response.status_code == 404
+        assert "User not found" in response.json["error"]
+
+    def test_valid_token_returns_upload_url(self, client, mock_food_services):
+        """Should return upload_url and image_id for valid token."""
+        response = client.get("/v1/food/upload_url", headers={"Authorization": "Bearer valid_token"})
+        assert response.status_code == 200
+        assert "upload_url" in response.json
+        assert "image_id" in response.json
+        assert response.json["upload_url"] == "https://storage.googleapis.com/ecs191-login-bucket/signed-url"
+        assert response.json["image_id"] == "a1b2c3d4-e5f6-7890-abcd-ef1234567890.jpg"
+
+    def test_generate_upload_url_called_with_user_id(self, client, mock_food_services):
+        """Should call generate_upload_url with the correct user_id."""
+        client.get("/v1/food/upload_url", headers={"Authorization": "Bearer valid_token"})
+        mock_food_services["generate_upload_url"].assert_called_once_with("user_test123")
