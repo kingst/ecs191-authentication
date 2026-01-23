@@ -39,12 +39,12 @@ image from Google Cloud Storage. It returns a JSON object with:
 
 ```json
 {
-  calories: 100,
-  carbohydrates_grams: 15,
-  protein_grams: 75,
-  description: "Eggs and bacon",
-  confidence: "high", // can be "high", "medium", or "low"
-  image_id: "1A32-3E4123-123F3.jpg" // the name is a URL safe UUID
+  "calories": 100,
+  "carbohydrates_grams": 15,
+  "protein_grams": 75,
+  "description": "Eggs and bacon",
+  "confidence": "high", // can be "high", "medium", or "low"
+  "image_id": "1A32-3E4123-123F3.jpg" // the name is a URL safe UUID
 }
 ```
 
@@ -57,7 +57,7 @@ where we will store our images. We will store them under the
 
 When a user creates a signed URL, we will create an image name for
 them using a UUID with the format `<UUID>.jpg`. This is an
-implementation detail, from the API pespective we return a URL safe
+implementation detail, from the API perspective we return a URL safe
 string, but this choice will help keep our implementation simple since
 we don't need to use extra storage to map image IDs to storage
 locations.
@@ -90,11 +90,11 @@ For authentication, we will add a `ANTHROPIC_API_KEY` value to our
 
   - Error handling: If we get an error from anthropic, pass it back through the API as a specific "anthropic" error type
 
-  - Non food or low quality images: Return an error in this case
+  - Non food or low quality images: Return an error at the API level, but get details from the model
 
   - For the model, use "claude-sonnet-4-5-20250929"
   
-  - Anthropic has a max size of 5mb for their APIs so resize large images as needed to fit
+  - Anthropic has a max size of 5mb for their APIs so resize large images as needed to fit. Maintain the same aspect ratio and come up with a heuristic to resize it down to something that will work, iterate if needed.
 
 ### System prompt
 
