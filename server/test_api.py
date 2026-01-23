@@ -13,6 +13,7 @@ with patch("google.cloud.ndb.Client"):
         TEST_SERVICE_UNAVAILABLE,
         TEST_VALID_CODE,
     )
+    from services.anthropic_service import AnthropicError
 
 
 @pytest.fixture
@@ -217,7 +218,11 @@ def mock_food_services():
     """Mock services for food API endpoints."""
     with patch("api.food.get_session") as mock_get_session, \
          patch("api.food.get_user_by_key") as mock_get_user_by_key, \
-         patch("api.food.generate_upload_url") as mock_generate_upload_url:
+         patch("api.food.generate_upload_url") as mock_generate_upload_url, \
+         patch("api.food.fetch_image") as mock_fetch_image, \
+         patch("api.food.is_valid_jpeg") as mock_is_valid_jpeg, \
+         patch("api.food.resize_image_if_needed") as mock_resize_image, \
+         patch("api.food.analyze_food_image") as mock_analyze_food_image:
 
         mock_user = MagicMock()
         mock_user.key.id.return_value = "user_test123"
@@ -233,10 +238,29 @@ def mock_food_services():
             "a1b2c3d4-e5f6-7890-abcd-ef1234567890.jpg"
         )
 
+        # Default mocks for analyze endpoint
+        mock_fetch_image.return_value = b'\xff\xd8\xff fake jpeg data'
+        mock_is_valid_jpeg.return_value = True
+        mock_resize_image.side_effect = lambda x: x  # Pass through
+
+        mock_analysis_result = MagicMock()
+        mock_analysis_result.is_food = True
+        mock_analysis_result.calories = 650
+        mock_analysis_result.carbohydrates_grams = 45
+        mock_analysis_result.protein_grams = 35
+        mock_analysis_result.description = "Burger and fries"
+        mock_analysis_result.confidence = "high"
+        mock_analyze_food_image.return_value = mock_analysis_result
+
         yield {
             "get_session": mock_get_session,
             "get_user_by_key": mock_get_user_by_key,
             "generate_upload_url": mock_generate_upload_url,
+            "fetch_image": mock_fetch_image,
+            "is_valid_jpeg": mock_is_valid_jpeg,
+            "resize_image": mock_resize_image,
+            "analyze_food_image": mock_analyze_food_image,
+            "analysis_result": mock_analysis_result,
             "user": mock_user,
         }
 
@@ -283,3 +307,85 @@ class TestGetUploadUrl:
         """Should call generate_upload_url with the correct user_id."""
         client.get("/v1/food/upload_url", headers={"Authorization": "Bearer valid_token"})
         mock_food_services["generate_upload_url"].assert_called_once_with("user_test123")
+
+
+class TestAnalyzeImage:
+    """Tests for GET /v1/food/analyze/{image_id} endpoint."""
+
+    def test_missing_auth_header(self, client):
+        """Should return 401 when Authorization header is missing."""
+        response = client.get("/v1/food/analyze/test-image.jpg")
+        assert response.status_code == 401
+        assert "Authorization header required" in response.json["error"]
+
+    def test_malformed_auth_header(self, client):
+        """Should return 401 for malformed Authorization header."""
+        response = client.get("/v1/food/analyze/test-image.jpg", headers={"Authorization": "InvalidFormat"})
+        assert response.status_code == 401
+        assert "Authorization header required" in response.json["error"]
+
+    def test_invalid_token(self, client, mock_food_services):
+        """Should return 401 for invalid token."""
+        mock_food_services["get_session"].return_value = None
+        response = client.get("/v1/food/analyze/test-image.jpg", headers={"Authorization": "Bearer invalid_token"})
+        assert response.status_code == 401
+        assert "Invalid token" in response.json["error"]
+
+    def test_user_not_found(self, client, mock_food_services):
+        """Should return 404 when user record is deleted."""
+        mock_food_services["get_user_by_key"].return_value = None
+        response = client.get("/v1/food/analyze/test-image.jpg", headers={"Authorization": "Bearer valid_token"})
+        assert response.status_code == 404
+        assert "User not found" in response.json["error"]
+
+    def test_image_not_found(self, client, mock_food_services):
+        """Should return 404 when image doesn't exist in storage."""
+        mock_food_services["fetch_image"].return_value = None
+        response = client.get("/v1/food/analyze/nonexistent.jpg", headers={"Authorization": "Bearer valid_token"})
+        assert response.status_code == 404
+        assert "Image not found" in response.json["error"]
+
+    def test_invalid_image_format(self, client, mock_food_services):
+        """Should return 400 when image is not a valid JPEG."""
+        mock_food_services["is_valid_jpeg"].return_value = False
+        response = client.get("/v1/food/analyze/test-image.jpg", headers={"Authorization": "Bearer valid_token"})
+        assert response.status_code == 400
+        assert "Invalid image format" in response.json["error"]
+
+    def test_anthropic_api_error(self, client, mock_food_services):
+        """Should return 502 when Anthropic API fails."""
+        mock_food_services["analyze_food_image"].side_effect = AnthropicError("API rate limit exceeded")
+        response = client.get("/v1/food/analyze/test-image.jpg", headers={"Authorization": "Bearer valid_token"})
+        assert response.status_code == 502
+        assert "Analysis service error" in response.json["error"]
+
+    def test_non_food_image(self, client, mock_food_services):
+        """Should return 400 when image doesn't contain food."""
+        mock_food_services["analysis_result"].is_food = False
+        mock_food_services["analysis_result"].description = "Image shows a car, not food"
+        response = client.get("/v1/food/analyze/test-image.jpg", headers={"Authorization": "Bearer valid_token"})
+        assert response.status_code == 400
+        assert "Could not analyze image" in response.json["error"]
+        assert "car" in response.json["error"]
+
+    def test_successful_analysis(self, client, mock_food_services):
+        """Should return nutritional data for valid food image."""
+        response = client.get("/v1/food/analyze/test-image.jpg", headers={"Authorization": "Bearer valid_token"})
+        assert response.status_code == 200
+        assert response.json["calories"] == 650
+        assert response.json["carbohydrates_grams"] == 45
+        assert response.json["protein_grams"] == 35
+        assert response.json["description"] == "Burger and fries"
+        assert response.json["confidence"] == "high"
+        assert response.json["image_id"] == "test-image.jpg"
+
+    def test_analyze_called_with_image_data(self, client, mock_food_services):
+        """Should call analyze_food_image with the fetched image data."""
+        mock_food_services["fetch_image"].return_value = b'test image data'
+        client.get("/v1/food/analyze/test-image.jpg", headers={"Authorization": "Bearer valid_token"})
+        mock_food_services["analyze_food_image"].assert_called_once_with(b'test image data')
+
+    def test_fetch_image_called_with_user_id_and_image_id(self, client, mock_food_services):
+        """Should call fetch_image with correct user_id and image_id."""
+        client.get("/v1/food/analyze/my-food-pic.jpg", headers={"Authorization": "Bearer valid_token"})
+        mock_food_services["fetch_image"].assert_called_once_with("user_test123", "my-food-pic.jpg")

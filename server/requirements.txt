@@ -1,4 +1,5 @@
 aiohappyeyeballs==2.6.1
+anthropic==0.76.0
 aiohttp==3.13.3
 aiohttp-retry==2.9.1
 aiosignal==1.4.0
@@ -25,6 +26,7 @@ Jinja2==3.1.6
 MarkupSafe==3.0.3
 multidict==6.7.0
 packaging==25.0
+Pillow==11.1.0
 propcache==0.4.1
 proto-plus==1.27.0
 protobuf==6.33.4

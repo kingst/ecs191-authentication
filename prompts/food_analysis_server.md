@@ -67,8 +67,8 @@ When we create signed URLs, the URL will be valid for 10 minutes.
 ## Image analysis
 
 For image analysis, we're going to use Anthropic APIs. We will use
-Sonnet version 4.5, provide the server with context and get configure
-it to return JSON to us, which we can then pass back to the user.
+Claude Sonnet 4.5, providing a system prompt that instructs it to return
+JSON which we can then pass back to the user.
 
 All images should be jpeg images, but since these are uploaded directly
 by clients we should confirm that they are jpeg images before sending
@@ -84,8 +84,6 @@ For authentication, we will add a `ANTHROPIC_API_KEY` value to our
 
   - Use the official Python SDK from anthropic
 
-  - Use structured JSON output via the `response_format` parameter
-
   - Images need to be base64-encoded and sent with a media type image/jpeg
   
   - Prompt design: Use a system prompt (below) and send the image as a user message
@@ -94,11 +92,13 @@ For authentication, we will add a `ANTHROPIC_API_KEY` value to our
 
   - Non food or low quality images: Return an error in this case
 
-  - For the model, use claude-sonnet-4-5-20250514
+  - For the model, use "claude-sonnet-4-5-20250929"
+  
+  - Anthropic has a max size of 5mb for their APIs so resize large images as needed to fit
 
 ### System prompt
 
-You are a food nutrition analyst. Analyze the provided image and estimate its nutritional content.
+You are a food nutrition analyst. Analyze the provided image and estimate its nutritional content. Of the nutritional content the most important one to get right is carbohydrates.
                                                                 
 Return a JSON object with these fields:
   - is_food: boolean, true if the image contains identifiable food, false otherwise
