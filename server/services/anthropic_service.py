@@ -65,8 +65,9 @@ def analyze_food_image(image_data: bytes) -> FoodAnalysisResult:
     try:
         response = client.messages.create(
             model=MODEL,
-            max_tokens=1024,
+            max_tokens=6000,
             system=SYSTEM_PROMPT,
+            thinking={"type": "enabled", "budget_tokens": 4096},
             messages=[
                 {
                     "role": "user",
@@ -91,7 +92,8 @@ def analyze_food_image(image_data: bytes) -> FoodAnalysisResult:
         raise AnthropicError(str(e))
 
     # Parse JSON from response
-    response_text = response.content[0].text.strip()
+    # FIXME: we should have more robust handling here and check if this is correct
+    response_text = response.content[-1].text.strip()
 
     # Handle potential markdown code fences
     if response_text.startswith("```"):
