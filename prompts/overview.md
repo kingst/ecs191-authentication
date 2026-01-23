@@ -22,6 +22,11 @@ subdirectories:
 
 ## Rules
 
+- Don't edit any of the files in `prompts`. These are files that I
+  will update manually as my specification evolves. The rest of the
+  directories are where you will implement code and can make
+  modifications.
+
 - Don't commit any code using `git`. I'd like to inspect code you
   write before committing it.
 

@@ -72,10 +72,43 @@ it to return JSON to us, which we can then pass back to the user.
 
 All images should be jpeg images, but since these are uploaded directly
 by clients we should confirm that they are jpeg images before sending
-them to Anthropic.
+them to Anthropic by checking for the magic bytes in the data.
 
 One additional item we want to get from Anthropic is a confidence in
 their prediction, so let's ask it to assess this for us explicitly.
 
 For authentication, we will add a `ANTHROPIC_API_KEY` value to our
 `creds.py` file in the server.
+
+### Details
+
+  - Use the official Python SDK from anthropic
+
+  - Use structured JSON output via the `response_format` parameter
+
+  - Images need to be base64-encoded and sent with a media type image/jpeg
+  
+  - Prompt design: Use a system prompt (below) and send the image as a user message
+
+  - Error handling: If we get an error from anthropic, pass it back through the API as a specific "anthropic" error type
+
+  - Non food or low quality images: Return an error in this case
+
+  - For the model, use claude-sonnet-4-5-20250514
+
+### System prompt
+
+You are a food nutrition analyst. Analyze the provided image and estimate its nutritional content.
+                                                                
+Return a JSON object with these fields:
+  - is_food: boolean, true if the image contains identifiable food, false otherwise
+  - calories: integer, estimated total calories (0 if is_food is false)
+  - carbohydrates_grams: integer, estimated carbohydrates in grams (0 if is_food is false)
+  - protein_grams: integer, estimated protein in grams (0 if is_food is false)
+  - description: string, brief description of the food (e.g., "burger and fries"), or reason why analysis failed
+  - confidence: string, one of "high", "medium", or "low"
+
+Set is_food to false if:
+  - The image does not contain food
+  - The image is too blurry to analyze
+  - The food is too obscured to estimate nutritional content

@@ -291,7 +291,9 @@ Errors:
 | 401 | `{"error": "Authorization header required"}` | Missing or malformed Authorization header |
 | 401 | `{"error": "Invalid token"}` | Token not found or expired |
 | 404 | `{"error": "Image not found"}` | Image ID does not exist in storage |
-| 400 | `{"error": "Could not analyze image"}` | Image could not be processed (not a valid food image, etc.) |
+| 400 | `{"error": "Invalid image format"}` | Uploaded file is not a valid JPEG image |
+| 400 | `{"error": "Could not analyze image: <reason>"}` | Image does not contain food, is too blurry, or food is too obscured |
+| 502 | `{"error": "Analysis service error: <details>"}` | Anthropic API returned an error |
 
 **Example**
 
