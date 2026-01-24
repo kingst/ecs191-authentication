@@ -11,9 +11,14 @@ struct VerifyCodeView: View {
     @ObservedObject var userService: UserService
 
     @State private var code = ""
+    @State private var isSubmitting = false
     @FocusState private var isCodeFieldFocused: Bool
 
     private let codeLength = 6
+
+    private var sanitizedCode: String {
+        String(code.filter { $0.isNumber }.prefix(codeLength))
+    }
 
     var body: some View {
         VStack(spacing: 24) {
@@ -26,8 +31,11 @@ struct VerifyCodeView: View {
                 .padding(.horizontal)
 
             // Code entry field
-            TextField("000000", text: $code)
+            TextField("", text: $code)
+                .textContentType(.oneTimeCode)
                 .keyboardType(.numberPad)
+                .autocorrectionDisabled()
+                .textInputAutocapitalization(.never)
                 .font(.system(size: 32, weight: .semibold, design: .monospaced))
                 .multilineTextAlignment(.center)
                 .padding()
@@ -36,27 +44,30 @@ struct VerifyCodeView: View {
                 .padding(.horizontal, 48)
                 .focused($isCodeFieldFocused)
                 .onChange(of: code) { _, newValue in
-                    // Only allow digits
-                    let filtered = newValue.filter { $0.isNumber }
-                    if filtered != newValue {
-                        code = filtered
-                    }
-
-                    // Limit to 6 digits
-                    if code.count > codeLength {
-                        code = String(code.prefix(codeLength))
-                    }
-
                     // Clear error when editing
                     userService.clearAuthError()
 
-                    // Auto-advance when 6 digits entered
-                    if code.count == codeLength {
+                    // Sanitize input (allow autofill to complete first)
+                    let sanitized = String(newValue.filter { $0.isNumber }.prefix(codeLength))
+                    if sanitized != newValue {
+                        code = sanitized
+                        return
+                    }
+
+                    // Auto-submit when 6 digits entered
+                    if sanitized.count == codeLength && !isSubmitting {
+                        isSubmitting = true
                         Task {
-                            await userService.verifyCode(code)
+                            await userService.verifyCode(sanitized)
+                            isSubmitting = false
                         }
                     }
                 }
+
+            // Show entered code as placeholder hint
+            Text("Enter 6-digit code")
+                .font(.footnote)
+                .foregroundColor(.secondary)
 
             // Error text
             if let error = userService.authError {
@@ -76,7 +87,10 @@ struct VerifyCodeView: View {
             Spacer()
         }
         .onAppear {
-            isCodeFieldFocused = true
+            // Delay focus slightly to allow autofill to register
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                isCodeFieldFocused = true
+            }
         }
     }
 }

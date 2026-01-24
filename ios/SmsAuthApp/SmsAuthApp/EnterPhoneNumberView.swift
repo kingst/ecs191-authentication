@@ -102,6 +102,7 @@ struct EnterPhoneNumberView: View {
                 // Phone number text field
                 TextField("Phone number", text: $phoneNumber)
                     .keyboardType(.phonePad)
+                    .textContentType(.telephoneNumber)
                     .padding(.horizontal, 12)
                     .padding(.vertical, 14)
                     .background(Color(.systemGray6))

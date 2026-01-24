@@ -7,6 +7,10 @@ using the server. The iOS and Android clients will be standard apps vs
 an SDK and will be for demonstration purposes, but we will deploy the
 server to production so that students can use it this quarter.
 
+We are also including a feature to use on the main view: a food
+tracker. The food tracker takes a picture of food, gets it analyzed by
+our server, and displays today's information for the user.
+
 ## Project organization
 
 From the top level directory of this repo, here are the main

@@ -122,6 +122,8 @@ Clear the error once the user edits the phone
 
 When they press the "next" button, show a loading animation
 
+Make sure that you mark the edit with the `telephoneNumber` type so that it will offer to autofill phone numbers.
+
 # VerifyCodeView
 
 This view will have
@@ -132,5 +134,7 @@ This view will have
   - Error text: Only shows when there is an authError
 
 This view should automatically advance once the user enters the code
+
+Make sure that when iOS gives the option to autofill the one time code that it works when the user clicks on it.
 
 Clear the error once the user edits the code or they press the `back` button

@@ -37,7 +37,7 @@ class UserService: ObservableObject {
     // Store the phone number between views
     var phoneNumber: String = ""
 
-    private var token: String? {
+    private(set) var token: String? {
         get { UserDefaults.standard.string(forKey: "authToken") }
         set { UserDefaults.standard.set(newValue, forKey: "authToken") }
     }
