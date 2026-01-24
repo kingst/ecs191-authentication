@@ -16,7 +16,7 @@ struct MainView: View {
             if userService.isCheckingAuth {
                 ProgressView()
             } else if userService.isAuthenticated {
-                HomeView(userService: userService)
+                FoodLogDashboard(userService: userService)
             } else if showVerifyCode {
                 VerifyCodeView(userService: userService)
             } else {
