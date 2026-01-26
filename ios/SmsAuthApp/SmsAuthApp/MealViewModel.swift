@@ -34,12 +34,14 @@ class MealViewModel: ObservableObject {
     private let mealService = MealService.shared
 
     init() {
-        loadData()
+        Task {
+            await loadData()
+        }
     }
 
-    func loadData() {
-        meals = mealService.queryMeals()
-        goals = mealService.goals()
+    func loadData() async {
+        meals = await mealService.queryMeals()
+        goals = await mealService.goals()
     }
 
     var todaysMeals: [Meal] {
@@ -109,9 +111,11 @@ class MealViewModel: ObservableObject {
             proteinInGrams: pending.protein
         )
 
-        mealService.add(meal: meal)
-        loadData() // Refresh the published meals array
-        pendingMeal = nil
+        Task { @MainActor in
+            await mealService.add(meal: meal)
+            await loadData() // Refresh the published meals array
+            pendingMeal = nil
+        }
     }
 
     func cancelPendingMeal() {

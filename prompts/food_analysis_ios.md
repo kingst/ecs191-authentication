@@ -82,7 +82,7 @@ DailyMealGoals struct:
   - carboydrates
   - protein
 
-MealService:
+MealService (should be an actor to avoid data races):
   - func addMeal(from image: Image) (throw an exception if there is an error adding the meal)
   - func queryMeals() -> [Meal]
   - func update(meal: Meal)

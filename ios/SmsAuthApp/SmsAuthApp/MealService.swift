@@ -95,7 +95,7 @@ enum MealServiceError: LocalizedError {
 
 // MARK: - MealService
 
-class MealService {
+actor MealService {
     static let shared = MealService()
 
     private static let baseURL = "https://ecs191-sms-authentication.uc.r.appspot.com"
