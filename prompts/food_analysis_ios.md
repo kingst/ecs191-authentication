@@ -64,7 +64,7 @@ following published properties:
   - goals: DailyMealGoals
 
 and a function:
-  - addMeal (we'll add this later, don't worry about it for now)
+  - addMeal
 
 ## MealService model
 
