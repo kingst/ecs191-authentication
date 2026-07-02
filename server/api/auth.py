@@ -23,6 +23,9 @@ def validate_phone_number(phone_number: str) -> bool:
 @auth_api.route("/v1/send_sms_code", methods=["POST"])
 def send_sms_code():
     """Send a verification code to the given phone number."""
+    # Temporarily disabled: return 404 so this endpoint appears unavailable.
+    return jsonify({"error": "Not found"}), 404
+
     data = request.get_json()
 
     if not data or "phone_number" not in data:
@@ -47,6 +50,9 @@ def send_sms_code():
 @auth_api.route("/v1/verify_code", methods=["POST"])
 def verify_code_endpoint():
     """Verify the code and return a session token."""
+    # Temporarily disabled: return 404 so this endpoint appears unavailable.
+    return jsonify({"error": "Not found"}), 404
+
     data = request.get_json()
 
     if not data or "phone_number" not in data or "app_id" not in data or "code" not in data:
@@ -71,6 +77,9 @@ def verify_code_endpoint():
 @auth_api.route("/v1/user", methods=["GET"])
 def get_user():
     """Get the current user's information."""
+    # Temporarily disabled: return 404 so this endpoint appears unavailable.
+    return jsonify({"error": "Not found"}), 404
+
     auth_header = request.headers.get("Authorization")
 
     if not auth_header or not auth_header.startswith("Bearer "):

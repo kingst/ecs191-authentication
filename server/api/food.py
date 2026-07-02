@@ -11,6 +11,9 @@ food_api = Blueprint("food_api", __name__)
 @food_api.route("/v1/food/upload_url", methods=["GET"])
 def get_upload_url():
     """Get a signed URL for uploading a food image."""
+    # Temporarily disabled: return 404 so this endpoint appears unavailable.
+    return jsonify({"error": "Not found"}), 404
+
     auth_header = request.headers.get("Authorization")
 
     if not auth_header or not auth_header.startswith("Bearer "):
@@ -39,6 +42,9 @@ def get_upload_url():
 @food_api.route("/v1/food/analyze/<image_id>", methods=["GET"])
 def analyze_image(image_id):
     """Analyze a food image and return nutritional estimates."""
+    # Temporarily disabled: return 404 so this endpoint appears unavailable.
+    return jsonify({"error": "Not found"}), 404
+
     auth_header = request.headers.get("Authorization")
 
     if not auth_header or not auth_header.startswith("Bearer "):
