@@ -12,6 +12,13 @@ class UserService: ObservableObject {
     private static let baseURL = "https://ecs191-sms-authentication.uc.r.appspot.com"
     private static let appId = "com.smsauthapp.ios"
 
+    // APP_TOKEN comes from Config/Secrets.xcconfig (gitignored) via Info.plist.
+    // Nil if no token is configured, in which case only test phone numbers work.
+    private static let appToken: String? = {
+        let token = Bundle.main.object(forInfoDictionaryKey: "APP_TOKEN") as? String
+        return token?.isEmpty == false ? token : nil
+    }()
+
     // Use ephemeral session on simulator to avoid QUIC protocol issues with App Engine
     private static let urlSession: URLSession = {
         #if targetEnvironment(simulator)
@@ -68,10 +75,13 @@ class UserService: ObservableObject {
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
 
-        let body: [String: String] = [
+        var body: [String: String] = [
             "phone_number": phoneNumber,
             "app_id": Self.appId
         ]
+        if let appToken = Self.appToken {
+            body["app_token"] = appToken
+        }
 
         do {
             request.httpBody = try JSONEncoder().encode(body)
@@ -109,11 +119,14 @@ class UserService: ObservableObject {
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
 
-        let body: [String: String] = [
+        var body: [String: String] = [
             "phone_number": phoneNumber,
             "app_id": Self.appId,
             "code": code
         ]
+        if let appToken = Self.appToken {
+            body["app_token"] = appToken
+        }
 
         do {
             request.httpBody = try JSONEncoder().encode(body)

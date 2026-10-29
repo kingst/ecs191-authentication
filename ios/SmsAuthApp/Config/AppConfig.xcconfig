@@ -1,0 +1,14 @@
+// Build settings for the SmsAuthApp target. This file is the target's
+// base configuration for both Debug and Release.
+//
+// Secrets like APP_TOKEN live in Secrets.xcconfig, which is gitignored
+// so they never end up on GitHub. To set yours, copy
+// Secrets.example.xcconfig to Secrets.xcconfig and fill in your token.
+//
+// The "?" makes the include optional, so the app still builds without
+// Secrets.xcconfig. In that case APP_TOKEN is empty and only the test
+// phone numbers will work.
+
+APP_TOKEN =
+
+#include? "Secrets.xcconfig"

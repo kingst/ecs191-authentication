@@ -48,6 +48,7 @@ The API uses two kinds of tokens:
 - Missing `app_token`: 401 `{"error": "app_token is required"}`
 - Unknown `app_token`: 401 `{"error": "Invalid app_token"}`
 - Treat your app token like a password. Don't commit it to a public repository or share it with other apps. Tokens that are leaked or abused will be revoked.
+- For a standard way to keep your token out of git on iOS, see [`ios/SmsAuthApp/README.md`](../ios/SmsAuthApp/README.md#using-this-pattern-in-your-own-app).
 - The app token is separate from `app_id`. `app_id` scopes user accounts (the same phone number gets a different `user_id` for each `app_id`), and the app token controls who can use the API.
 
 ### Session Tokens
