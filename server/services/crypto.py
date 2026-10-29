@@ -1,6 +1,7 @@
 import hashlib
+import hmac
 
-from creds import PHONE_HASH_SALT
+from creds import PHONE_HASH_SALT, APP_TOKENS
 
 
 def hash_phone_number(phone_number: str) -> str:
@@ -14,3 +15,18 @@ def hash_phone_number(phone_number: str) -> str:
         PHONE_HASH_SALT.encode("utf-8"),
         iterations=100000,
     ).hex()
+
+
+def is_valid_app_token(app_token: str) -> bool:
+    """Check whether the app token is in the list of valid tokens in creds.py.
+
+    Uses a constant-time comparison so response timing doesn't leak
+    information about valid tokens.
+    """
+    if not isinstance(app_token, str):
+        return False
+
+    return any(
+        hmac.compare_digest(app_token.encode("utf-8"), valid_token.encode("utf-8"))
+        for valid_token in APP_TOKENS
+    )

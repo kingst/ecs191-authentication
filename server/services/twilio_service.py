@@ -27,6 +27,11 @@ TEST_NUMBERS = {
 TEST_VALID_CODE = "123456"
 
 
+def is_test_number(phone_number) -> bool:
+    """Return True if this is a test number that bypasses Twilio."""
+    return isinstance(phone_number, str) and phone_number in TEST_NUMBERS
+
+
 def get_twilio_client() -> Client:
     """Get configured Twilio client."""
     return Client(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)

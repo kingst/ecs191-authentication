@@ -13,6 +13,16 @@ You need to set up credentials, which are ignored by git (see
     - Then copy the random number you get from the previous command
       into the `creds.py` file
 
+  - Add the app tokens you want to accept to `APP_TOKENS` in
+    `creds.py`. Clients must send one of these as `app_token` in
+    requests to `/v1/send_sms_code` and `/v1/verify_code` (see
+    `API.md`), except for the test phone numbers listed below. Give
+    each app its own token so you can revoke one by
+    removing it from the list and redeploying. An empty list rejects
+    every request.
+
+    - e.g., python3 -c "import secrets; print(secrets.token_urlsafe(32))"
+
   - Fill in your account and project ID in the `deploy.sh` script
 
 To test locally:
@@ -64,6 +74,7 @@ All test numbers use the format: `+1530555XXXX`
 
 Notes:
 
+- Test numbers don't need an `app_token` because they never hit Twilio; every other number does
 - Validation errors (missing fields, invalid E.164 format) can be tested with any phone number
 - Token-based errors (`Authorization header required`, `Invalid token`, `User not found`) are tested by manipulating the Authorization header, not by phone number
 - The happy path code `123456` only works with the test number `+15305550000`

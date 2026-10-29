@@ -7,7 +7,8 @@ from services.firestore_service import (
     get_session,
     get_user_by_key,
 )
-from services.twilio_service import send_verification, check_verification, TwilioError
+from services.twilio_service import send_verification, check_verification, is_test_number, TwilioError
+from services.crypto import is_valid_app_token
 
 
 auth_api = Blueprint("auth_api", __name__)
@@ -20,15 +21,34 @@ def validate_phone_number(phone_number: str) -> bool:
     return bool(E164_PATTERN.match(phone_number))
 
 
+def app_token_error(data):
+    """Return an error response if the request lacks a valid app token, else None.
+
+    Test numbers never hit Twilio, so they don't need an app token.
+    """
+    if isinstance(data, dict) and is_test_number(data.get("phone_number")):
+        return None
+
+    if not data or "app_token" not in data:
+        return jsonify({"error": "app_token is required"}), 401
+
+    if not is_valid_app_token(data["app_token"]):
+        return jsonify({"error": "Invalid app_token"}), 401
+
+    return None
+
+
 @auth_api.route("/v1/send_sms_code", methods=["POST"])
 def send_sms_code():
     """Send a verification code to the given phone number."""
-    # Temporarily disabled: return 404 so this endpoint appears unavailable.
-    return jsonify({"error": "Not found"}), 404
-
     data = request.get_json()
 
-    if not data or "phone_number" not in data:
+    # Check the app token first so unauthorized callers can't trigger SMS sends
+    error = app_token_error(data)
+    if error:
+        return error
+
+    if "phone_number" not in data:
         return jsonify({"error": "phone_number is required"}), 400
 
     if "app_id" not in data:
@@ -50,12 +70,13 @@ def send_sms_code():
 @auth_api.route("/v1/verify_code", methods=["POST"])
 def verify_code_endpoint():
     """Verify the code and return a session token."""
-    # Temporarily disabled: return 404 so this endpoint appears unavailable.
-    return jsonify({"error": "Not found"}), 404
-
     data = request.get_json()
 
-    if not data or "phone_number" not in data or "app_id" not in data or "code" not in data:
+    error = app_token_error(data)
+    if error:
+        return error
+
+    if "phone_number" not in data or "app_id" not in data or "code" not in data:
         return jsonify({"error": "phone_number, app_id, and code are required"}), 400
 
     phone_number = data["phone_number"]
@@ -77,9 +98,6 @@ def verify_code_endpoint():
 @auth_api.route("/v1/user", methods=["GET"])
 def get_user():
     """Get the current user's information."""
-    # Temporarily disabled: return 404 so this endpoint appears unavailable.
-    return jsonify({"error": "Not found"}), 404
-
     auth_header = request.headers.get("Authorization")
 
     if not auth_header or not auth_header.startswith("Bearer "):

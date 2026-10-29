@@ -16,6 +16,18 @@ with patch("google.cloud.ndb.Client"):
     from services.anthropic_service import AnthropicError
 
 
+TEST_APP_TOKEN = "test_app_token"
+
+DISABLED_REASON = "endpoint is temporarily disabled and returns 404"
+
+
+@pytest.fixture(autouse=True)
+def mock_app_tokens():
+    """Use a known app token instead of the tokens in creds.py."""
+    with patch("services.crypto.APP_TOKENS", [TEST_APP_TOKEN]):
+        yield
+
+
 @pytest.fixture
 def client():
     """Create a test client for the Flask app."""
@@ -57,21 +69,79 @@ def mock_firestore():
 class TestSendSmsCode:
     """Tests for POST /v1/send_sms_code endpoint."""
 
+    def test_missing_app_token(self, client):
+        """Should return 401 when app_token is missing."""
+        response = client.post("/v1/send_sms_code", json={
+            "phone_number": "+14155551234",
+            "app_id": "test_app"
+        })
+        assert response.status_code == 401
+        assert response.json["error"] == "app_token is required"
+
+    def test_invalid_app_token(self, client):
+        """Should return 401 when app_token is not in the list of valid tokens."""
+        response = client.post("/v1/send_sms_code", json={
+            "app_token": "not_a_valid_token",
+            "phone_number": "+14155551234",
+            "app_id": "test_app"
+        })
+        assert response.status_code == 401
+        assert response.json["error"] == "Invalid app_token"
+
+    def test_non_string_app_token(self, client):
+        """Should return 401 when app_token is not a string."""
+        response = client.post("/v1/send_sms_code", json={
+            "app_token": 12345,
+            "phone_number": "+14155551234",
+            "app_id": "test_app"
+        })
+        assert response.status_code == 401
+        assert response.json["error"] == "Invalid app_token"
+
+    def test_invalid_app_token_does_not_send_sms(self, client):
+        """Should not call Twilio when app_token is invalid."""
+        with patch("api.auth.send_verification") as mock_send:
+            client.post("/v1/send_sms_code", json={
+                "app_token": "not_a_valid_token",
+                "phone_number": "+14155551234",
+                "app_id": "test_app"
+            })
+        mock_send.assert_not_called()
+
+    def test_test_number_does_not_need_app_token(self, client):
+        """Test numbers never hit Twilio, so they don't need an app_token."""
+        response = client.post("/v1/send_sms_code", json={
+            "phone_number": TEST_HAPPY_PATH,
+            "app_id": "test_app"
+        })
+        assert response.status_code == 200
+        assert response.json["success"] is True
+
+    def test_non_string_phone_number_requires_app_token(self, client):
+        """Should return 401, not crash, when phone_number isn't a string."""
+        response = client.post("/v1/send_sms_code", json={
+            "phone_number": [TEST_HAPPY_PATH],
+            "app_id": "test_app"
+        })
+        assert response.status_code == 401
+        assert response.json["error"] == "app_token is required"
+
     def test_missing_phone_number(self, client):
         """Should return 400 when phone_number is missing."""
-        response = client.post("/v1/send_sms_code", json={"app_id": "test_app"})
+        response = client.post("/v1/send_sms_code", json={"app_token": TEST_APP_TOKEN, "app_id": "test_app"})
         assert response.status_code == 400
         assert response.json["error"] == "phone_number is required"
 
     def test_missing_app_id(self, client):
         """Should return 400 when app_id is missing."""
-        response = client.post("/v1/send_sms_code", json={"phone_number": "+14155551234"})
+        response = client.post("/v1/send_sms_code", json={"app_token": TEST_APP_TOKEN, "phone_number": "+14155551234"})
         assert response.status_code == 400
         assert response.json["error"] == "app_id is required"
 
     def test_invalid_phone_format(self, client):
         """Should return 400 for invalid E.164 format."""
         response = client.post("/v1/send_sms_code", json={
+            "app_token": TEST_APP_TOKEN,
             "phone_number": "4155551234",
             "app_id": "test_app"
         })
@@ -81,6 +151,7 @@ class TestSendSmsCode:
     def test_happy_path_success(self, client):
         """Should return success for happy path test number."""
         response = client.post("/v1/send_sms_code", json={
+            "app_token": TEST_APP_TOKEN,
             "phone_number": TEST_HAPPY_PATH,
             "app_id": "test_app"
         })
@@ -90,6 +161,7 @@ class TestSendSmsCode:
     def test_invalid_phone_error(self, client):
         """Should return 400 for invalid phone test number."""
         response = client.post("/v1/send_sms_code", json={
+            "app_token": TEST_APP_TOKEN,
             "phone_number": TEST_INVALID_PHONE,
             "app_id": "test_app"
         })
@@ -99,6 +171,7 @@ class TestSendSmsCode:
     def test_service_unavailable_error(self, client):
         """Should return 400 for service unavailable test number."""
         response = client.post("/v1/send_sms_code", json={
+            "app_token": TEST_APP_TOKEN,
             "phone_number": TEST_SERVICE_UNAVAILABLE,
             "app_id": "test_app"
         })
@@ -108,6 +181,7 @@ class TestSendSmsCode:
     def test_invalid_code_sends_successfully(self, client):
         """Invalid code test number should send successfully."""
         response = client.post("/v1/send_sms_code", json={
+            "app_token": TEST_APP_TOKEN,
             "phone_number": TEST_INVALID_CODE,
             "app_id": "test_app"
         })
@@ -117,6 +191,7 @@ class TestSendSmsCode:
     def test_max_attempts_sends_successfully(self, client):
         """Max attempts test number should send successfully."""
         response = client.post("/v1/send_sms_code", json={
+            "app_token": TEST_APP_TOKEN,
             "phone_number": TEST_MAX_ATTEMPTS,
             "app_id": "test_app"
         })
@@ -127,15 +202,48 @@ class TestSendSmsCode:
 class TestVerifyCode:
     """Tests for POST /v1/verify_code endpoint."""
 
+    def test_missing_app_token(self, client):
+        """Should return 401 when app_token is missing."""
+        response = client.post("/v1/verify_code", json={
+            "phone_number": "+14155551234",
+            "app_id": "test_app",
+            "code": TEST_VALID_CODE
+        })
+        assert response.status_code == 401
+        assert response.json["error"] == "app_token is required"
+
+    def test_invalid_app_token(self, client, mock_firestore):
+        """Should return 401 and not create a session when app_token is invalid."""
+        response = client.post("/v1/verify_code", json={
+            "app_token": "not_a_valid_token",
+            "phone_number": "+14155551234",
+            "app_id": "test_app",
+            "code": TEST_VALID_CODE
+        })
+        assert response.status_code == 401
+        assert response.json["error"] == "Invalid app_token"
+        mock_firestore["create_session"].assert_not_called()
+
+    def test_test_number_does_not_need_app_token(self, client, mock_firestore):
+        """Test numbers never hit Twilio, so they don't need an app_token."""
+        response = client.post("/v1/verify_code", json={
+            "phone_number": TEST_HAPPY_PATH,
+            "app_id": "test_app",
+            "code": TEST_VALID_CODE
+        })
+        assert response.status_code == 200
+        assert "token" in response.json
+
     def test_missing_fields(self, client):
         """Should return 400 when required fields are missing."""
-        response = client.post("/v1/verify_code", json={"phone_number": "+14155551234"})
+        response = client.post("/v1/verify_code", json={"app_token": TEST_APP_TOKEN, "phone_number": "+14155551234"})
         assert response.status_code == 400
         assert "phone_number, app_id, and code are required" in response.json["error"]
 
     def test_happy_path_correct_code(self, client, mock_firestore):
         """Should return success with token for correct code."""
         response = client.post("/v1/verify_code", json={
+            "app_token": TEST_APP_TOKEN,
             "phone_number": TEST_HAPPY_PATH,
             "app_id": "test_app",
             "code": TEST_VALID_CODE
@@ -148,6 +256,7 @@ class TestVerifyCode:
     def test_happy_path_wrong_code(self, client, mock_firestore):
         """Should return 401 for wrong code on happy path number."""
         response = client.post("/v1/verify_code", json={
+            "app_token": TEST_APP_TOKEN,
             "phone_number": TEST_HAPPY_PATH,
             "app_id": "test_app",
             "code": "000000"
@@ -158,6 +267,7 @@ class TestVerifyCode:
     def test_invalid_code_number_always_fails(self, client, mock_firestore):
         """Invalid code test number should always fail verification."""
         response = client.post("/v1/verify_code", json={
+            "app_token": TEST_APP_TOKEN,
             "phone_number": TEST_INVALID_CODE,
             "app_id": "test_app",
             "code": TEST_VALID_CODE
@@ -168,12 +278,27 @@ class TestVerifyCode:
     def test_max_attempts_always_fails(self, client, mock_firestore):
         """Max attempts test number should always fail verification."""
         response = client.post("/v1/verify_code", json={
+            "app_token": TEST_APP_TOKEN,
             "phone_number": TEST_MAX_ATTEMPTS,
             "app_id": "test_app",
             "code": TEST_VALID_CODE
         })
         assert response.status_code == 401
         assert "Invalid or expired code" in response.json["error"]
+
+
+class TestDisabledEndpoints:
+    """The food endpoints are temporarily disabled and return 404."""
+
+    @pytest.mark.parametrize("path", [
+        "/v1/food/upload_url",
+        "/v1/food/analyze/test-image.jpg",
+    ])
+    def test_returns_404(self, client, path):
+        """Should return 404 even with an Authorization header."""
+        response = client.get(path, headers={"Authorization": "Bearer valid_token"})
+        assert response.status_code == 404
+        assert response.json["error"] == "Not found"
 
 
 class TestGetUser:
@@ -265,6 +390,7 @@ def mock_food_services():
         }
 
 
+@pytest.mark.skip(reason=DISABLED_REASON)
 class TestGetUploadUrl:
     """Tests for GET /v1/food/upload_url endpoint."""
 
@@ -309,6 +435,7 @@ class TestGetUploadUrl:
         mock_food_services["generate_upload_url"].assert_called_once_with("user_test123")
 
 
+@pytest.mark.skip(reason=DISABLED_REASON)
 class TestAnalyzeImage:
     """Tests for GET /v1/food/analyze/{image_id} endpoint."""
 
