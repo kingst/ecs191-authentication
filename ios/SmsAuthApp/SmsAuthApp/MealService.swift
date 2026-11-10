@@ -68,6 +68,10 @@ actor MealService {
         await storage.delete(meal: meal)
     }
 
+    func deleteAll() async {
+        await storage.deleteAll()
+    }
+
     func goals() async -> DailyMealGoals {
         await storage.goals()
     }

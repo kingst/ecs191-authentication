@@ -71,7 +71,8 @@ enum MealAPIError: LocalizedError {
 struct MealAPI {
     static let shared = MealAPI()
 
-    private static let baseURL = "https://ecs191-sms-authentication.uc.r.appspot.com"
+    //private static let baseURL = "https://ecs191-sms-authentication.uc.r.appspot.com"
+    private static let baseURL = "http://127.0.0.1:5001"
 
     // Use ephemeral session on simulator to avoid QUIC protocol issues
     private static let urlSession: URLSession = {

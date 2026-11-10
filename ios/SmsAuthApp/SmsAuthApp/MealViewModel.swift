@@ -44,6 +44,12 @@ class MealViewModel: ObservableObject {
         goals = await mealService.goals()
     }
 
+    /// Removes all locally stored meals and goals, for when the account is deleted.
+    func deleteAllData() async {
+        await mealService.deleteAll()
+        await loadData()
+    }
+
     var todaysMeals: [Meal] {
         let calendar = Calendar.current
         return meals.filter { calendar.isDateInToday($0.date) }

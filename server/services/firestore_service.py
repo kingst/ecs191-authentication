@@ -50,3 +50,13 @@ def get_user_by_key(user_key: ndb.Key) -> User | None:
     """Get user by key. Returns None if not found."""
     with client.context():
         return user_key.get()
+
+
+def delete_user(user_key: ndb.Key) -> None:
+    """Permanently delete a user and all of their sessions."""
+    with client.context():
+        session_keys = Session.query(Session.user_key == user_key).fetch(keys_only=True)
+
+        # Delete everything in one transaction so a failure can't leave a
+        # user without sessions or sessions without a user.
+        ndb.transaction(lambda: ndb.delete_multi(session_keys + [user_key]))

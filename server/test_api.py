@@ -42,7 +42,9 @@ def mock_firestore():
     with patch("api.auth.get_or_create_user") as mock_get_user, \
          patch("api.auth.create_session") as mock_create_session, \
          patch("api.auth.get_session") as mock_get_session, \
-         patch("api.auth.get_user_by_key") as mock_get_user_by_key:
+         patch("api.auth.get_user_by_key") as mock_get_user_by_key, \
+         patch("api.auth.delete_user") as mock_delete_user, \
+         patch("api.auth.delete_user_images") as mock_delete_user_images:
 
         mock_user = MagicMock()
         mock_user.key.id.return_value = "user_test123"
@@ -62,6 +64,8 @@ def mock_firestore():
             "create_session": mock_create_session,
             "get_session": mock_get_session,
             "get_user_by_key": mock_get_user_by_key,
+            "delete_user": mock_delete_user,
+            "delete_user_images": mock_delete_user_images,
             "user": mock_user,
         }
 
@@ -336,6 +340,56 @@ class TestGetUser:
         assert response.status_code == 200
         assert "user_id" in response.json
         assert "created_at" in response.json
+
+
+class TestDeleteUser:
+    """Tests for DELETE /v1/user endpoint."""
+
+    def test_missing_auth_header(self, client, mock_firestore):
+        """Should return 401 when Authorization header is missing."""
+        response = client.delete("/v1/user")
+        assert response.status_code == 401
+        assert "Authorization header required" in response.json["error"]
+        mock_firestore["delete_user"].assert_not_called()
+
+    def test_malformed_auth_header(self, client, mock_firestore):
+        """Should return 401 for malformed Authorization header."""
+        response = client.delete("/v1/user", headers={"Authorization": "InvalidFormat"})
+        assert response.status_code == 401
+        assert "Authorization header required" in response.json["error"]
+        mock_firestore["delete_user"].assert_not_called()
+
+    def test_invalid_token(self, client, mock_firestore):
+        """Should return 401 and delete nothing for an invalid token."""
+        mock_firestore["get_session"].return_value = None
+        response = client.delete("/v1/user", headers={"Authorization": "Bearer invalid_token"})
+        assert response.status_code == 401
+        assert "Invalid token" in response.json["error"]
+        mock_firestore["delete_user"].assert_not_called()
+        mock_firestore["delete_user_images"].assert_not_called()
+
+    def test_valid_token_deletes_user(self, client, mock_firestore):
+        """Should delete the user, their sessions, and their images."""
+        response = client.delete("/v1/user", headers={"Authorization": "Bearer valid_token"})
+        assert response.status_code == 200
+        assert response.json == {"success": True}
+        mock_firestore["get_session"].assert_called_once_with("valid_token")
+        mock_firestore["delete_user"].assert_called_once_with(mock_firestore["user"].key)
+        mock_firestore["delete_user_images"].assert_called_once_with("user_test123")
+
+    def test_image_cleanup_failure_still_succeeds(self, client, mock_firestore):
+        """Should return 200 when the account is deleted but image cleanup fails."""
+        mock_firestore["delete_user_images"].side_effect = RuntimeError("storage unavailable")
+        response = client.delete("/v1/user", headers={"Authorization": "Bearer valid_token"})
+        assert response.status_code == 200
+        assert response.json == {"success": True}
+        mock_firestore["delete_user"].assert_called_once()
+
+    def test_does_not_need_app_token(self, client, mock_firestore):
+        """Should not require an app token, like GET /v1/user."""
+        with patch("services.crypto.APP_TOKENS", []):
+            response = client.delete("/v1/user", headers={"Authorization": "Bearer valid_token"})
+        assert response.status_code == 200
 
 
 @pytest.fixture

@@ -244,6 +244,17 @@ actor MealStorage {
         saveMealsToDisk()
     }
 
+    /// Removes every meal, image, and goal from memory and disk.
+    func deleteAll() {
+        let fileManager = FileManager.default
+        try? fileManager.removeItem(at: Self.mealsFileURL)
+        try? fileManager.removeItem(at: Self.goalsFileURL)
+        try? fileManager.removeItem(at: Self.imagesDirectoryURL)
+
+        storedMeals = []
+        storedGoals = .default
+    }
+
     func goals() -> DailyMealGoals {
         loadFromDiskIfNeeded()
         return storedGoals
