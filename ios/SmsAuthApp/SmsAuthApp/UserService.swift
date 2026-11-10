@@ -161,6 +161,52 @@ class UserService: ObservableObject {
         phoneNumber = ""
     }
 
+    /// Permanently deletes the account on the server, then logs out locally.
+    /// Returns true if the account was deleted.
+    func deleteAccount() async -> Bool {
+        isLoading = true
+        authError = nil
+
+        defer { isLoading = false }
+
+        guard let token = token else {
+            logout()
+            return true
+        }
+
+        guard let url = URL(string: "\(Self.baseURL)/v1/user") else {
+            authError = "Invalid URL"
+            return false
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "DELETE"
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+
+        do {
+            let (data, response) = try await Self.urlSession.data(for: request)
+
+            guard let httpResponse = response as? HTTPURLResponse else {
+                authError = "Invalid response"
+                return false
+            }
+
+            // A 401 means the token is no longer valid, so the account is
+            // already gone or we're already logged out. Either way, log out.
+            if httpResponse.statusCode == 200 || httpResponse.statusCode == 401 {
+                logout()
+                return true
+            } else {
+                let errorResponse = try? JSONDecoder().decode(ErrorResponse.self, from: data)
+                authError = errorResponse?.error ?? "Failed to delete account"
+                return false
+            }
+        } catch {
+            authError = "Network error: \(error.localizedDescription)"
+            return false
+        }
+    }
+
     private func checkAuthentication() async {
         defer { isCheckingAuth = false }
 

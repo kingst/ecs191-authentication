@@ -22,6 +22,7 @@ struct FoodLogDashboard: View {
     @State private var selectedTab: HomeTab = .dashboard
     @State private var showingCamera = false
     @State private var showingAnalysisSheet = false
+    @State private var showingDeleteConfirmation = false
 
     private var proteinGradient: LinearGradient {
         LinearGradient(
@@ -162,7 +163,49 @@ struct FoodLogDashboard: View {
                     .cornerRadius(12)
             }
             .padding(.horizontal)
-            .padding(.bottom, 32)
+
+            Button(role: .destructive) {
+                userService.clearAuthError()
+                showingDeleteConfirmation = true
+            } label: {
+                if userService.isLoading {
+                    ProgressView()
+                } else {
+                    Text("Delete account")
+                        .fontWeight(.semibold)
+                }
+            }
+            .disabled(userService.isLoading)
+
+            if let error = userService.authError {
+                Text(error)
+                    .font(.footnote)
+                    .foregroundColor(.red)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal)
+            }
+
+            Spacer()
+                .frame(height: 32)
+        }
+        .confirmationDialog(
+            "Delete your account?",
+            isPresented: $showingDeleteConfirmation,
+            titleVisibility: .visible
+        ) {
+            Button("Delete account", role: .destructive) {
+                Task {
+                    // Capture the view model first: a successful delete logs
+                    // out, which removes this view.
+                    let mealViewModel = mealViewModel
+                    if await userService.deleteAccount() {
+                        await mealViewModel.deleteAllData()
+                    }
+                }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("This permanently deletes your account and your logged meals. It can't be undone.")
         }
     }
 

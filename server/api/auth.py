@@ -1,3 +1,4 @@
+import logging
 import re
 from flask import Blueprint, request, jsonify
 
@@ -6,7 +7,9 @@ from services.firestore_service import (
     create_session,
     get_session,
     get_user_by_key,
+    delete_user,
 )
+from services.storage_service import delete_user_images
 from services.twilio_service import send_verification, check_verification, is_test_number, TwilioError
 from services.crypto import is_valid_app_token
 
@@ -118,3 +121,33 @@ def get_user():
         "user_id": str(user.key.id()),
         "created_at": user.created_at.isoformat() if user.created_at else None,
     })
+
+
+@auth_api.route("/v1/user", methods=["DELETE"])
+def delete_user_endpoint():
+    """Permanently delete the current user's account."""
+    auth_header = request.headers.get("Authorization")
+
+    if not auth_header or not auth_header.startswith("Bearer "):
+        return jsonify({"error": "Authorization header required"}), 401
+
+    token = auth_header[7:]  # Remove "Bearer " prefix
+    session = get_session(token)
+
+    if not session:
+        return jsonify({"error": "Invalid token"}), 401
+
+    user_id = str(session.user_key.id())
+
+    # Delete the account first. Once this succeeds, the user can no longer
+    # log in to this account, so the deletion is done from their point of view.
+    delete_user(session.user_key)
+
+    # Image cleanup is best effort: the account is already gone, so a storage
+    # failure shouldn't turn a successful deletion into an error.
+    try:
+        delete_user_images(user_id)
+    except Exception:
+        logging.exception("Failed to delete images for deleted user %s", user_id)
+
+    return jsonify({"success": True})

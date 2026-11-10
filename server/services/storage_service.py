@@ -66,6 +66,16 @@ def fetch_image(user_id: str, image_id: str) -> bytes | None:
     return blob.download_as_bytes()
 
 
+def delete_user_images(user_id: str) -> None:
+    """Permanently delete every image the user has uploaded."""
+    client = storage.Client()
+    bucket = client.bucket(BUCKET_NAME)
+
+    # The trailing slash keeps user "12" from matching user "123"
+    for blob in client.list_blobs(bucket, prefix=f"images/{user_id}/"):
+        blob.delete()
+
+
 # JPEG magic bytes: FF D8 FF
 JPEG_MAGIC_BYTES = b'\xff\xd8\xff'
 

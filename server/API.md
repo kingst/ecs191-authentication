@@ -9,6 +9,7 @@ Base URL: `https://ecs191-sms-authentication.uc.r.appspot.com` (production) or `
 | `POST /v1/send_sms_code` | Available (requires an `app_token`, except for [test phone numbers](#test-phone-numbers)) |
 | `POST /v1/verify_code` | Available (requires an `app_token`, except for [test phone numbers](#test-phone-numbers)) |
 | `GET /v1/user` | Available (requires a session token) |
+| `DELETE /v1/user` | Available (requires a session token) |
 | `GET /v1/food/upload_url` | **Temporarily disabled**, returns 404 |
 | `GET /v1/food/analyze/{image_id}` | **Temporarily disabled**, returns 404 |
 
@@ -207,6 +208,53 @@ Errors:
 
 ```bash
 curl http://localhost:5001/v1/user \
+  -H "Authorization: Bearer abc123..."
+```
+
+---
+
+### DELETE /v1/user
+
+Permanently delete the authenticated user's account. Like `GET /v1/user`, this endpoint doesn't take an `app_token`; the session token in the `Authorization` header is enough.
+
+Deleting an account removes:
+
+- The user record, including the hashed phone number
+- Every session token for the user, on every device
+- Every image the user uploaded through the food APIs
+
+Deletion is immediate and can't be undone.
+
+> **The `user_id` is gone for good.** If the same phone number logs in to your app again, the server creates a brand new account with a **different** `user_id`. If your own backend stores data keyed by `user_id`, the server can't delete that data for you. Delete it yourself when you call this endpoint; otherwise it's orphaned, and the user won't get it back by signing up again.
+
+**Headers**
+
+| Header | Required | Description |
+|--------|----------|-------------|
+| Authorization | Yes | Bearer token from verify_code response |
+
+**Response**
+
+Success (200):
+```json
+{
+  "success": true
+}
+```
+
+After a successful response, discard the session token. Any later request with it returns 401 `{"error": "Invalid token"}`.
+
+Errors:
+
+| Status | Response | Description |
+|--------|----------|-------------|
+| 401 | `{"error": "Authorization header required"}` | Missing or malformed Authorization header |
+| 401 | `{"error": "Invalid token"}` | Token not found, expired, or the account was already deleted |
+
+**Example**
+
+```bash
+curl -X DELETE http://localhost:5001/v1/user \
   -H "Authorization: Bearer abc123..."
 ```
 
